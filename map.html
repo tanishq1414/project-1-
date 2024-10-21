@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospitals in Delhi</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            padding: 20px;
+            max-width: 1200px;
+            margin: auto;
+            background-color: white;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .hospital-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-gap: 10px;
+        }
+
+        .hospital-item {
+            padding: 10px;
+            background-color: #e3f2fd;
+            border-left: 5px solid #2196f3;
+            font-size: 18px;
+        }
+
+        .btn-nearest {
+            display: block;
+            width: 200px;
+            margin: 20px auto;
+            padding: 10px;
+            background-color: #4caf50;
+            color: white;
+            text-align: center;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .btn-nearest:hover {
+            background-color: #45a049;
+        }
+
+        #map {
+            width: 100%;
+            height: 400px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        #nearest-hospital {
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+    <!-- Include Google Maps JavaScript API -->
+    <script async
+        src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places&callback=initMap">
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Hospitals in Delhi</h1>
+
+        <!-- Static list of hospitals in Delhi -->
+        <ul class="hospital-list">
+            <li class="hospital-item">AIIMS (All India Institute of Medical Sciences)</li>
+            <li class="hospital-item">Fortis Hospital</li>
+            <li class="hospital-item">Max Super Specialty Hospital</li>
+            <li class="hospital-item">Apollo Hospitals</li>
+            <li class="hospital-item">Sir Ganga Ram Hospital</li>
+            <li class="hospital-item">BLK Super Specialty Hospital</li>
+            <li class="hospital-item">Safdarjung Hospital</li>
+            <li class="hospital-item">Indraprastha Apollo Hospital</li>
+            <li class="hospital-item">Deen Dayal Upadhyay Hospital</li>
+            <li class="hospital-item">Holy Family Hospital</li>
+        </ul>
+
+        <!-- Button to find the nearest hospital -->
+        <button class="btn-nearest" onclick="findNearestHospital()">Find Nearest Hospital</button>
+
+        <!-- Map to show nearest hospital -->
+        <div id="map"></div>
+
+        <!-- Nearest hospital info -->
+        <div id="nearest-hospital"></div>
+    </div>
+
+    <script>
+        var map, infoWindow, service;
+
+        function initMap() {
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: 28.6139, lng: 77.2090 },  // Delhi coordinates
+                zoom: 13
+            });
+
+            infoWindow = new google.maps.InfoWindow();
+        }
+
+        function findNearestHospital() {
+            // Show the map when the user clicks the button
+            document.getElementById('map').style.display = 'block';
+
+            // Try HTML5 Geolocation to get the user's current location
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function (position) {
+                    var userLocation = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+
+                    // Set map center to user's location
+                    map.setCenter(userLocation);
+
+                    // Search for nearby hospitals using Places API
+                    var request = {
+                        location: userLocation,
+                        radius: '5000',  // Search within 5km radius
+                        type: ['hospital']
+                    };
+
+                    service = new google.maps.places.PlacesService(map);
+                    service.nearbySearch(request, function (results, status) {
+                        if (status === google.maps.places.PlacesServiceStatus.OK) {
+                            // Display the nearest hospital
+                            var nearestHospital = results[0];
+                            document.getElementById('nearest-hospital').innerHTML = `
+                                <h2>Nearest Hospital:</h2>
+                                <p><strong>${nearestHospital.name}</strong></p>
+                                <p>Address: ${nearestHospital.vicinity}</p>
+                            `;
+
+                            // Add a marker for the nearest hospital
+                            var marker = new google.maps.Marker({
+                                position: nearestHospital.geometry.location,
+                                map: map,
+                                title: nearestHospital.name
+                            });
+
+                            infoWindow.setContent(nearestHospital.name);
+                            infoWindow.open(map, marker);
+                        }
+                    });
+                }, function () {
+                    handleLocationError(true, map.getCenter());
+                });
+            } else {
+                // Browser doesn't support Geolocation
+                handleLocationError(false, map.getCenter());
+            }
+        }
+
+        function handleLocationError(browserHasGeolocation, pos) {
+            var errorMessage = browserHasGeolocation
+                ? 'Error: The Geolocation service failed.'
+                : 'Error: Your browser doesn\'t support geolocation.';
+            document.getElementById('nearest-hospital').innerHTML = `<p>${errorMessage}</p>`;
+        }
+    </script>
+</body>
+</html>
